@@ -1,5 +1,6 @@
 package com.sb_ecom.backend_ecom.controller;
 
+import com.sb_ecom.backend_ecom.config.AppConstants;
 import com.sb_ecom.backend_ecom.payload.ProductDTO;
 import com.sb_ecom.backend_ecom.payload.ProductResponse;
 import com.sb_ecom.backend_ecom.service.ProductService;
@@ -9,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api")

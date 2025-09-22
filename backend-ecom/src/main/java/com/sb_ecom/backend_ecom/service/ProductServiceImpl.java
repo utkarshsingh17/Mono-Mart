@@ -4,6 +4,7 @@ import com.sb_ecom.backend_ecom.exceptions.APIException;
 import com.sb_ecom.backend_ecom.exceptions.ResourceNotFoundException;
 import com.sb_ecom.backend_ecom.model.Cart;
 import com.sb_ecom.backend_ecom.model.Category;
+import com.sb_ecom.backend_ecom.model.User;
 import com.sb_ecom.backend_ecom.model.Product;
 import com.sb_ecom.backend_ecom.payload.CartDTO;
 import com.sb_ecom.backend_ecom.payload.ProductDTO;
@@ -11,6 +12,7 @@ import com.sb_ecom.backend_ecom.payload.ProductResponse;
 import com.sb_ecom.backend_ecom.repo.CartRepository;
 import com.sb_ecom.backend_ecom.repo.CategoryRepository;
 import com.sb_ecom.backend_ecom.repo.ProductRepository;
+import com.sb_ecom.backend_ecom.util.AuthUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -95,7 +97,7 @@ public class ProductServiceImpl implements ProductService {
                 : Sort.by(sortBy).descending();
 
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
-        Specification<Product> spec = Specification.where(null);
+        Specification<Product> spec = Specification.allOf();
         if (keyword != null && !keyword.isEmpty()) {
             spec = spec.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("productName")), "%" + keyword.toLowerCase() + "%"));
