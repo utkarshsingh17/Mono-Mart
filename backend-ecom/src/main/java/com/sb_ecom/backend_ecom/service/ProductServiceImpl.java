@@ -2,8 +2,10 @@ package com.sb_ecom.backend_ecom.service;
 
 import com.sb_ecom.backend_ecom.exceptions.APIException;
 import com.sb_ecom.backend_ecom.exceptions.ResourceNotFoundException;
+import com.sb_ecom.backend_ecom.model.Cart;
 import com.sb_ecom.backend_ecom.model.Category;
 import com.sb_ecom.backend_ecom.model.Product;
+import com.sb_ecom.backend_ecom.payload.CartDTO;
 import com.sb_ecom.backend_ecom.payload.ProductDTO;
 import com.sb_ecom.backend_ecom.payload.ProductResponse;
 import com.sb_ecom.backend_ecom.repo.CartRepository;
@@ -18,8 +20,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -44,7 +49,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     AuthUtil authUtil;
-
 
 
     @Value("${project.image}")
@@ -204,7 +208,7 @@ public class ProductServiceImpl implements ProductService {
 
         List<Product> products = pageProducts.getContent();
 
-        if(products.isEmpty()){
+        if (products.isEmpty()) {
             throw new APIException(category.getCategoryName() + " category does not have any products");
         }
 
@@ -236,7 +240,7 @@ public class ProductServiceImpl implements ProductService {
                 .map(product -> modelMapper.map(product, ProductDTO.class))
                 .toList();
 
-        if(products.isEmpty()){
+        if (products.isEmpty()) {
             throw new APIException("Products not found with keyword: " + keyword);
         }
 
@@ -309,5 +313,7 @@ public class ProductServiceImpl implements ProductService {
         Product updatedProduct = productRepository.save(productFromDb);
         return modelMapper.map(updatedProduct, ProductDTO.class);
     }
+
+}
 
 
