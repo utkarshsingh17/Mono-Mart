@@ -5,7 +5,9 @@ import com.sb_ecom.backend_ecom.config.AppConstants;
 import com.sb_ecom.backend_ecom.payload.AuthenticationResult;
 import com.sb_ecom.backend_ecom.security.request.LoginRequest;
 import com.sb_ecom.backend_ecom.security.request.SignupRequest;
+import com.sb_ecom.backend_ecom.security.request.TokenRefreshRequest;
 import com.sb_ecom.backend_ecom.security.response.MessageResponse;
+import com.sb_ecom.backend_ecom.security.response.TokenRefreshResponse;
 import com.sb_ecom.backend_ecom.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +30,9 @@ public class AuthController {
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         AuthenticationResult result = authService.login(loginRequest);
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,
-                        result.getJwtCookie().toString())
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, result.getJwtCookie().toString())
+                .header(HttpHeaders.SET_COOKIE, result.getRefreshTokenCookie().toString())
                 .body(result.getResponse());
     }
 
@@ -54,10 +57,29 @@ public class AuthController {
 
     @PostMapping("/signout")
     public ResponseEntity<?> signoutUser(){
-        ResponseCookie cookie = authService.logoutUser();
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,
-                        cookie.toString())
+        ResponseCookie jwtCookie = authService.logoutUser();
+        ResponseCookie refreshTokenCookie = authService.getCleanRefreshTokenCookie();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                 .body(new MessageResponse("You've been signed out!"));
+    }
+
+    @PostMapping("/refreshtoken")
+    public ResponseEntity<?> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        TokenRefreshResponse response = authService.refreshToken(request);
+
+        // Generate cookie with new access token
+        ResponseCookie jwtCookie = ResponseCookie.from("springBootEcom", response.getAccessToken())
+                .path("/api")
+                .maxAge(24 * 60 * 60)
+                .httpOnly(false)
+                .secure(false)
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .body(response);
     }
 
     @GetMapping("/sellers")
@@ -72,3 +94,4 @@ public class AuthController {
     }
 
 }
+

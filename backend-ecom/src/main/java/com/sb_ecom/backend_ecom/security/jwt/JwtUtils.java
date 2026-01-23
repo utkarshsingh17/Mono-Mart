@@ -32,8 +32,20 @@ public class JwtUtils {
     @Value("${spring.ecom.app.jwtCookieName}")
     private String jwtCookie;
 
+    @Value("${spring.ecom.app.jwtRefreshCookieName}")
+    private String jwtRefreshCookie;
+
     public String getJwtFromCookies(HttpServletRequest request) {
         Cookie cookie = WebUtils.getCookie(request, jwtCookie);
+        if (cookie != null) {
+            return cookie.getValue();
+        } else {
+            return null;
+        }
+    }
+
+    public String getRefreshTokenFromCookies(HttpServletRequest request) {
+        Cookie cookie = WebUtils.getCookie(request, jwtRefreshCookie);
         if (cookie != null) {
             return cookie.getValue();
         } else {
@@ -60,8 +72,25 @@ public class JwtUtils {
         return cookie;
     }
 
+    public ResponseCookie generateRefreshTokenCookie(String refreshToken) {
+        ResponseCookie cookie = ResponseCookie.from(jwtRefreshCookie, refreshToken)
+                .path("/api")
+                .maxAge(7 * 24 * 60 * 60) // 7 days
+                .httpOnly(true)
+                .secure(false)
+                .build();
+        return cookie;
+    }
+
     public ResponseCookie getCleanJwtCookie() {
         ResponseCookie cookie = ResponseCookie.from(jwtCookie, null)
+                .path("/api")
+                .build();
+        return cookie;
+    }
+
+    public ResponseCookie getCleanRefreshTokenCookie() {
+        ResponseCookie cookie = ResponseCookie.from(jwtRefreshCookie, null)
                 .path("/api")
                 .build();
         return cookie;

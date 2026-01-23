@@ -11,4 +11,6 @@ import org.springframework.http.ResponseCookie;
 public class AuthenticationResult {
     private final UserInfoResponse response;
     private final ResponseCookie jwtCookie;
+    private final ResponseCookie refreshTokenCookie;
 }
+

@@ -5,7 +5,9 @@ import com.sb_ecom.backend_ecom.payload.AuthenticationResult;
 import com.sb_ecom.backend_ecom.payload.UserResponse;
 import com.sb_ecom.backend_ecom.security.request.LoginRequest;
 import com.sb_ecom.backend_ecom.security.request.SignupRequest;
+import com.sb_ecom.backend_ecom.security.request.TokenRefreshRequest;
 import com.sb_ecom.backend_ecom.security.response.MessageResponse;
+import com.sb_ecom.backend_ecom.security.response.TokenRefreshResponse;
 import com.sb_ecom.backend_ecom.security.response.UserInfoResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseCookie;
@@ -23,4 +25,8 @@ public interface AuthService {
     ResponseCookie logoutUser();
 
     UserResponse getAllSellers(Pageable pageable);
+
+    TokenRefreshResponse refreshToken(TokenRefreshRequest request);
+
+    ResponseCookie getCleanRefreshTokenCookie();
 }
