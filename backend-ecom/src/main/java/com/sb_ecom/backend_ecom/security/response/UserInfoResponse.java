@@ -5,9 +5,20 @@ import java.util.List;
 public class UserInfoResponse {
     private Long id;
     private String jwtToken;
+    private String refreshToken;
     private String username;
     private String email;
     private List<String> roles;
+
+    public UserInfoResponse(Long id, String username, List<String> roles, String email, String jwtToken,
+            String refreshToken) {
+        this.id = id;
+        this.username = username;
+        this.roles = roles;
+        this.email = email;
+        this.jwtToken = jwtToken;
+        this.refreshToken = refreshToken;
+    }
 
     public UserInfoResponse(Long id, String username, List<String> roles, String email, String jwtToken) {
         this.id = id;
@@ -39,6 +50,14 @@ public class UserInfoResponse {
         this.jwtToken = jwtToken;
     }
 
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
     public String getUsername() {
         return username;
     }
@@ -63,3 +82,4 @@ public class UserInfoResponse {
         this.email = email;
     }
 }
+

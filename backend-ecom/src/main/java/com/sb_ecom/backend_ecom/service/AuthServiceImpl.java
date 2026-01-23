@@ -1,4 +1,7 @@
 package com.sb_ecom.backend_ecom.service;
+
+import com.sb_ecom.backend_ecom.exceptions.TokenRefreshException;
+import com.sb_ecom.backend_ecom.model.RefreshToken;
 import com.sb_ecom.backend_ecom.model.Role;
 import com.sb_ecom.backend_ecom.model.AppRole;
 import com.sb_ecom.backend_ecom.model.User;
@@ -10,7 +13,9 @@ import com.sb_ecom.backend_ecom.repo.UserRepository;
 import com.sb_ecom.backend_ecom.security.jwt.JwtUtils;
 import com.sb_ecom.backend_ecom.security.request.LoginRequest;
 import com.sb_ecom.backend_ecom.security.request.SignupRequest;
+import com.sb_ecom.backend_ecom.security.request.TokenRefreshRequest;
 import com.sb_ecom.backend_ecom.security.response.MessageResponse;
+import com.sb_ecom.backend_ecom.security.response.TokenRefreshResponse;
 import com.sb_ecom.backend_ecom.security.response.UserInfoResponse;
 import com.sb_ecom.backend_ecom.security.services.UserDetailsImpl;
 import jakarta.transaction.Transactional;
@@ -54,6 +59,9 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     ModelMapper modelMapper;
 
+    @Autowired
+    RefreshTokenService refreshTokenService;
+
     @Override
     public AuthenticationResult login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager
@@ -65,14 +73,23 @@ public class AuthServiceImpl implements AuthService {
 
         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
 
+        // Generate refresh token
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+        ResponseCookie refreshTokenCookie = jwtUtils.generateRefreshTokenCookie(refreshToken.getToken());
+
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
-        UserInfoResponse response = new UserInfoResponse(userDetails.getId(),
-                userDetails.getUsername(), roles, userDetails.getEmail(), jwtCookie.toString());
+        UserInfoResponse response = new UserInfoResponse(
+                userDetails.getId(),
+                userDetails.getUsername(),
+                roles,
+                userDetails.getEmail(),
+                jwtCookie.toString(),
+                refreshToken.getToken());
 
-        return new AuthenticationResult(response, jwtCookie);
+        return new AuthenticationResult(response, jwtCookie, refreshTokenCookie);
     }
 
     @Override
@@ -145,6 +162,26 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public ResponseCookie getCleanRefreshTokenCookie() {
+        return jwtUtils.getCleanRefreshTokenCookie();
+    }
+
+    @Override
+    public TokenRefreshResponse refreshToken(TokenRefreshRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String newAccessToken = jwtUtils.generateTokenFromUsername(user.getUserName());
+                    return new TokenRefreshResponse(newAccessToken, requestRefreshToken);
+                })
+                .orElseThrow(() -> new TokenRefreshException(requestRefreshToken,
+                        "Refresh token is not in database!"));
+    }
+
+    @Override
     public UserResponse getAllSellers(Pageable pageable) {
         Page<User> allUsers = userRepository.findByRoleName(AppRole.ROLE_SELLER, pageable);
         List<UserDTO> userDtos = allUsers.getContent()
@@ -164,3 +201,4 @@ public class AuthServiceImpl implements AuthService {
 
 
 }
+

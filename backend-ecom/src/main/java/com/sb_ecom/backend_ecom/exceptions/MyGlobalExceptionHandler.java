@@ -39,4 +39,12 @@ public class MyGlobalExceptionHandler {
         APIResponse apiResponse = new APIResponse(message, false);
         return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(TokenRefreshException.class)
+    public ResponseEntity<APIResponse> handleTokenRefreshException(TokenRefreshException e) {
+        String message = e.getMessage();
+        APIResponse apiResponse = new APIResponse(message, false);
+        return new ResponseEntity<>(apiResponse, HttpStatus.FORBIDDEN);
+    }
 }
+
