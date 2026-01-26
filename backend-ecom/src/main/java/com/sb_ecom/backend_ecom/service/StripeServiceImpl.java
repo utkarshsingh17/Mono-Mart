@@ -4,10 +4,10 @@ import com.sb_ecom.backend_ecom.payload.StripePaymentDTO;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
-import com.stripe.model.CustomerSearchResult;
+
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.CustomerCreateParams;
-import com.stripe.param.CustomerSearchParams;
+
 import com.stripe.param.PaymentIntentCreateParams;
 import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
@@ -28,19 +28,32 @@ public class StripeServiceImpl implements StripeService {
 
     @Override
     public PaymentIntent paymentIntent(StripePaymentDTO stripePaymentDto) throws StripeException {
-        Customer customer;
-        // Retrieve and check if customer exist
-        CustomerSearchParams searchParams =
-                CustomerSearchParams.builder()
-                        .setQuery("email:'" + stripePaymentDto.getEmail() + "'")
-                        .build();
-        CustomerSearchResult customers = Customer.search(searchParams);
-        if (customers.getData().isEmpty()) {
-            // Create new customer
-            CustomerCreateParams customerParams = CustomerCreateParams.builder()
+        PaymentIntentCreateParams.Builder paramsBuilder = PaymentIntentCreateParams.builder()
+                .setAmount(stripePaymentDto.getAmount())
+                .setCurrency(stripePaymentDto.getCurrency())
+                .setDescription(stripePaymentDto.getDescription())
+                .setAutomaticPaymentMethods(
+                        PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                .setEnabled(true)
+                                .build());
+
+        if (stripePaymentDto.getEmail() != null && !stripePaymentDto.getEmail().isEmpty()) {
+            Customer customer;
+            // Retrieve and check if customer exist
+            com.stripe.param.CustomerListParams listParams = com.stripe.param.CustomerListParams.builder()
                     .setEmail(stripePaymentDto.getEmail())
-                    .setName(stripePaymentDto.getName())
-                    .setAddress(
+                    .setLimit(1L)
+                    .build();
+            com.stripe.model.CustomerCollection customers = Customer.list(listParams);
+
+            if (customers.getData().isEmpty()) {
+                // Create new customer
+                CustomerCreateParams.Builder customerParamsBuilder = CustomerCreateParams.builder()
+                        .setEmail(stripePaymentDto.getEmail())
+                        .setName(stripePaymentDto.getName());
+
+                if (stripePaymentDto.getAddress() != null) {
+                    customerParamsBuilder.setAddress(
                             CustomerCreateParams.Address.builder()
                                     .setLine1(stripePaymentDto.getAddress().getStreet())
                                     .setCity(stripePaymentDto.getAddress().getCity())
@@ -48,28 +61,19 @@ public class StripeServiceImpl implements StripeService {
                                     .setPostalCode(stripePaymentDto.getAddress().getPincode())
                                     .setCountry(stripePaymentDto.getAddress().getCountry())
                                     .build()
-                    )
-                    .build();
+                    );
+                }
 
-            customer = Customer.create(customerParams);
-        } else {
-            // Fetch the customer that exist
-            customer = customers.getData().get(0);
+                CustomerCreateParams customerParams = customerParamsBuilder.build();
+                customer = Customer.create(customerParams);
+            } else {
+                // Fetch the customer that exist
+                customer = customers.getData().get(0);
+            }
+
+            paramsBuilder.setCustomer(customer.getId());
         }
 
-        PaymentIntentCreateParams params =
-                PaymentIntentCreateParams.builder()
-                        .setAmount(stripePaymentDto.getAmount())
-                        .setCurrency(stripePaymentDto.getCurrency())
-                        .setCustomer(customer.getId())
-                        .setDescription(stripePaymentDto.getDescription())
-                        .setAutomaticPaymentMethods(
-                                PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                        .setEnabled(true)
-                                        .build()
-                        )
-                        .build();
-
-        return PaymentIntent.create(params);
+        return PaymentIntent.create(paramsBuilder.build());
     }
 }
